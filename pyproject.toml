@@ -30,6 +30,8 @@ dependencies = [
     "pymupdf>=1.23.0",
     "click>=8.0.0",
     "rich>=13.0.0",
+    "ebooklib>=0.18",
+    "lxml>=4.9.0",
 ]
 
 [project.optional-dependencies]
@@ -43,6 +45,7 @@ dev = [
 
 [project.scripts]
 pdf-splitter = "pdf_splitter.cli:main"
+epub-splitter = "epub_splitter.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/shankarpandala/lazy-splitter"
