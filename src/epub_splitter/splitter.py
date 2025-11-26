@@ -3,8 +3,8 @@
 import re
 from pathlib import Path
 from typing import List, Set, Literal
-from lxml import html as lxml_html
-from ebooklib import epub
+from lxml import html as lxml_html  # type: ignore
+from ebooklib import epub  # type: ignore
 import fitz  # PyMuPDF
 
 from epub_splitter.models import EpubChapter
@@ -220,7 +220,7 @@ class EpubSplitter:
                 y_position += line_height
 
             # Add paragraph spacing
-            y_position += line_height / 2
+            y_position += int(line_height / 2)
 
         # Set metadata
         if preserve_metadata:
@@ -326,14 +326,14 @@ class EpubSplitter:
                 body = new_tree.find(".//body")
                 body.append(element)
 
-                return lxml_html.tostring(new_tree, encoding="utf-8")
+                return lxml_html.tostring(new_tree, encoding="utf-8")  # type: ignore[no-any-return]
 
             # If ID not found, return original content
-            return content
+            return content  # type: ignore[no-any-return]
 
         except Exception:
             # If extraction fails, return original content
-            return item.get_content()
+            return item.get_content()  # type: ignore[no-any-return]
 
     def _find_referenced_resources(
         self,

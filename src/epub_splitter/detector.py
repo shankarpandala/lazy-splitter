@@ -2,9 +2,9 @@
 
 from pathlib import Path
 from typing import List, Literal, Tuple
-from lxml import html as lxml_html
-import ebooklib
-from ebooklib import epub
+from lxml import html as lxml_html  # type: ignore
+import ebooklib  # type: ignore
+from ebooklib import epub  # type: ignore
 
 from epub_splitter.models import EpubChapter, EpubDetectionResult
 
@@ -175,7 +175,7 @@ class EpubChapterDetector:
         if "#" in href:
             file_path, html_id = href.split("#", 1)
             return file_path, html_id
-        return href, None
+        return href, ""
 
     def _detect_from_structure(self, book: epub.EpubBook) -> List[EpubChapter]:
         """
@@ -286,17 +286,17 @@ class EpubChapterDetector:
             # Try title tag first
             title_elem = tree.find(".//title")
             if title_elem is not None and title_elem.text:
-                return title_elem.text.strip()
+                return title_elem.text.strip()  # type: ignore[no-any-return]
 
             # Try first h1
             h1 = tree.find(".//h1")
             if h1 is not None:
-                return h1.text_content().strip()
+                return h1.text_content().strip()  # type: ignore[no-any-return]
 
             # Try first h2
             h2 = tree.find(".//h2")
             if h2 is not None:
-                return h2.text_content().strip()
+                return h2.text_content().strip()  # type: ignore[no-any-return]
 
         except Exception:
             pass

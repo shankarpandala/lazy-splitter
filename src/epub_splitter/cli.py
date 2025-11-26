@@ -117,7 +117,7 @@ def split(
         ) as progress:
             progress.add_task("Analyzing EPUB and detecting chapters...", total=None)
             detector = EpubChapterDetector(
-                strategy=strategy, sensitivity=sensitivity, toc_level=toc_level
+                strategy=strategy, sensitivity=sensitivity, toc_level=toc_level  # type: ignore[arg-type]
             )
             result = detector.detect(epub_file)
 
@@ -149,7 +149,7 @@ def split(
         format_name = "PDFs" if output_format == "pdf" else "EPUBs"
         console.print(f"\n[cyan]Splitting into {result.chapter_count} {format_name}...[/cyan]")
 
-        splitter = EpubSplitter(output_dir, filename_pattern=pattern, output_format=output_format)
+        splitter = EpubSplitter(output_dir, filename_pattern=pattern, output_format=output_format)  # type: ignore
 
         with Progress(console=console) as progress:
             progress_msg = f"[cyan]Creating chapter {format_name}..."
@@ -233,7 +233,7 @@ def preview(
         ) as progress:
             progress.add_task("Analyzing EPUB and detecting chapters...", total=None)
             detector = EpubChapterDetector(
-                strategy=strategy, sensitivity=sensitivity, toc_level=toc_level
+                strategy=strategy, sensitivity=sensitivity, toc_level=toc_level  # type: ignore[arg-type]
             )
             result = detector.detect(epub_file)
 
