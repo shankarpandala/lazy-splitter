@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lazy-splitter"
-version = "0.1.0"
+version = "0.2.0"
 description = "A collection of intelligent file splitting tools - PDF chapters, videos, audio, and more"
 readme = "README.md"
 requires-python = ">=3.8"
