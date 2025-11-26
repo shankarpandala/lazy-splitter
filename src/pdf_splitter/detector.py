@@ -93,9 +93,7 @@ class ChapterDetector:
             has_bookmarks=has_bookmarks,
         )
 
-    def _detect_from_bookmarks(
-        self, doc: fitz.Document, bookmark_level: int = 1
-    ) -> List[Chapter]:
+    def _detect_from_bookmarks(self, doc: fitz.Document, bookmark_level: int = 1) -> List[Chapter]:
         """
         Detect chapters from PDF bookmarks/outline.
 
