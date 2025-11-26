@@ -70,4 +70,5 @@ Thumbs.db
 # Project specific
 output/
 *.pdf
+*.epub
 !tests/fixtures/*.pdf
