@@ -58,10 +58,16 @@ def main() -> None:
 @click.option(
     "--pattern",
     type=str,
-    default="{index:02d}_{title}.epub",
-    help="Filename pattern for output files (default: {index:02d}_{title}.epub)",
+    default="{index:02d}_{title}",
+    help="Filename pattern for output files (default: {index:02d}_{title})",
 )
-@click.option("--no-metadata", is_flag=True, help="Do not preserve EPUB metadata in split files")
+@click.option(
+    "--output-format",
+    type=click.Choice(["epub", "pdf"], case_sensitive=False),
+    default="epub",
+    help="Output format - EPUB or PDF (default: epub)",
+)
+@click.option("--no-metadata", is_flag=True, help="Do not preserve metadata in split files")
 def split(
     epub_file: Path,
     output_dir: Optional[Path],
@@ -69,6 +75,7 @@ def split(
     sensitivity: str,
     toc_level: int,
     pattern: str,
+    output_format: str,
     no_metadata: bool,
 ) -> None:
     """
@@ -80,7 +87,7 @@ def split(
 
         epub-splitter split ebook.epub
 
-        epub-splitter split ebook.epub -o chapters/
+        epub-splitter split ebook.epub -o chapters/ --output-format pdf
 
         epub-splitter split ebook.epub --strategy structural --sensitivity high
     """
@@ -97,6 +104,7 @@ def split(
         console.print(f"\n[bold cyan]EPUB Chapter Splitter[/bold cyan] v{__version__}\n")
         console.print(f"[dim]Input:[/dim] {epub_file}")
         console.print(f"[dim]Output:[/dim] {output_dir}")
+        console.print(f"[dim]Format:[/dim] {output_format.upper()}")
         console.print(f"[dim]Strategy:[/dim] {strategy}")
         console.print(f"[dim]Sensitivity:[/dim] {sensitivity}")
         console.print(f"[dim]TOC Level:[/dim] {toc_level}\n")
@@ -138,12 +146,14 @@ def split(
                 return
 
         # Split the EPUB
-        console.print(f"\n[cyan]Splitting into {result.chapter_count} chapters...[/cyan]")
+        format_name = "PDFs" if output_format == "pdf" else "EPUBs"
+        console.print(f"\n[cyan]Splitting into {result.chapter_count} {format_name}...[/cyan]")
 
-        splitter = EpubSplitter(output_dir, filename_pattern=pattern)
+        splitter = EpubSplitter(output_dir, filename_pattern=pattern, output_format=output_format)
 
         with Progress(console=console) as progress:
-            task = progress.add_task("[cyan]Creating chapter EPUBs...", total=len(result.chapters))
+            progress_msg = f"[cyan]Creating chapter {format_name}..."
+            task = progress.add_task(progress_msg, total=len(result.chapters))
 
             created_files = splitter.split(
                 epub_file, result.chapters, preserve_metadata=not no_metadata

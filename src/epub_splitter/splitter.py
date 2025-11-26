@@ -2,29 +2,40 @@
 
 import re
 from pathlib import Path
-from typing import List, Set
+from typing import List, Set, Literal
 from lxml import html as lxml_html
 from ebooklib import epub
+import fitz  # PyMuPDF
 
 from epub_splitter.models import EpubChapter
+
+
+OutputFormat = Literal["epub", "pdf"]
 
 
 class EpubSplitter:
     """Handles splitting EPUB files by chapters."""
 
-    def __init__(self, output_dir: Path, filename_pattern: str = "{index:02d}_{title}.epub"):
+    def __init__(
+        self,
+        output_dir: Path,
+        filename_pattern: str = "{index:02d}_{title}.epub",
+        output_format: OutputFormat = "epub",
+    ):
         """
         Initialize the splitter.
 
         Args:
-            output_dir: Directory where split EPUBs will be saved
+            output_dir: Directory where split files will be saved
             filename_pattern: Pattern for output filenames. Available placeholders:
                 - {index}: Chapter index (starts at 1)
                 - {title}: Chapter title (sanitized)
                 - {file}: Original XHTML filename (without extension)
+            output_format: Output format - 'epub' or 'pdf'
         """
         self.output_dir = Path(output_dir)
         self.filename_pattern = filename_pattern
+        self.output_format = output_format
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def split(
@@ -35,6 +46,28 @@ class EpubSplitter:
     ) -> List[Path]:
         """
         Split an EPUB file into separate files by chapters.
+
+        Args:
+            epub_path: Path to the source EPUB file
+            chapters: List of chapters to split by
+            preserve_metadata: Whether to preserve metadata in split files
+
+        Returns:
+            List of paths to the created files (EPUB or PDF)
+        """
+        if self.output_format == "pdf":
+            return self._split_to_pdf(epub_path, chapters, preserve_metadata)
+        else:
+            return self._split_to_epub(epub_path, chapters, preserve_metadata)
+
+    def _split_to_epub(
+        self,
+        epub_path: Path,
+        chapters: List[EpubChapter],
+        preserve_metadata: bool = True,
+    ) -> List[Path]:
+        """
+        Split an EPUB file into separate EPUB files by chapters.
 
         Args:
             epub_path: Path to the source EPUB file
@@ -58,6 +91,142 @@ class EpubSplitter:
             created_files.append(output_path)
 
         return created_files
+
+    def _split_to_pdf(
+        self,
+        epub_path: Path,
+        chapters: List[EpubChapter],
+        preserve_metadata: bool = True,
+    ) -> List[Path]:
+        """
+        Split an EPUB file into separate PDF files by chapters.
+
+        Args:
+            epub_path: Path to the source EPUB file
+            chapters: List of chapters to split by
+            preserve_metadata: Whether to preserve metadata in PDF files
+
+        Returns:
+            List of paths to the created PDF files
+        """
+        book = epub.read_epub(str(epub_path))
+        created_files: List[Path] = []
+
+        for index, chapter in enumerate(chapters, start=1):
+            output_path = self._generate_filename(chapter, index)
+
+            # Get chapter content
+            main_item = book.get_item_with_href(chapter.file_path)
+            if not main_item:
+                continue
+
+            # Extract HTML content
+            if chapter.html_id:
+                html_content = self._extract_chapter_section(main_item, chapter.html_id)
+            else:
+                html_content = main_item.get_content()
+
+            # Convert HTML to PDF
+            pdf_doc = self._html_to_pdf(html_content, chapter.title, preserve_metadata)
+
+            # Save PDF
+            pdf_doc.save(str(output_path))
+            pdf_doc.close()
+            created_files.append(output_path)
+
+        return created_files
+
+    def _html_to_pdf(
+        self, html_content: bytes, title: str, preserve_metadata: bool
+    ) -> fitz.Document:
+        """
+        Convert HTML content to PDF.
+
+        Args:
+            html_content: HTML content as bytes
+            title: Chapter title for metadata
+            preserve_metadata: Whether to set metadata
+
+        Returns:
+            PyMuPDF Document object
+        """
+        # Create a new PDF document
+        pdf_doc = fitz.open()
+
+        # Extract text from HTML
+        try:
+            text = lxml_html.fromstring(html_content).text_content()
+        except Exception:
+            # Fallback to raw HTML decode
+            try:
+                html_str = html_content.decode("utf-8")
+            except UnicodeDecodeError:
+                html_str = html_content.decode("latin-1", errors="ignore")
+            import re
+
+            text = re.sub(r"<[^>]+>", "", html_str)
+
+        # Create pages and add text
+        page_width = 595  # A4 width in points
+        page_height = 842  # A4 height in points
+        margin = 50
+        line_height = 15
+        max_chars_per_line = 80
+
+        # Split text into paragraphs
+        paragraphs = [p.strip() for p in text.split("\n") if p.strip()]
+
+        # Create first page
+        page = pdf_doc.new_page(width=page_width, height=page_height)
+        y_position = margin
+
+        for para in paragraphs:
+            # Split paragraph into lines that fit
+            words = para.split()
+            current_line = ""
+
+            for word in words:
+                test_line = current_line + " " + word if current_line else word
+                if len(test_line) > max_chars_per_line:
+                    # Insert current line and start new one
+                    if y_position > page_height - margin:
+                        # Need new page
+                        page = pdf_doc.new_page(width=page_width, height=page_height)
+                        y_position = margin
+
+                    page.insert_text(
+                        (margin, y_position),
+                        current_line,
+                        fontsize=11,
+                        fontname="helv",
+                    )
+                    y_position += line_height
+                    current_line = word
+                else:
+                    current_line = test_line
+
+            # Insert remaining text in line
+            if current_line:
+                if y_position > page_height - margin:
+                    page = pdf_doc.new_page(width=page_width, height=page_height)
+                    y_position = margin
+
+                page.insert_text(
+                    (margin, y_position),
+                    current_line,
+                    fontsize=11,
+                    fontname="helv",
+                )
+                y_position += line_height
+
+            # Add paragraph spacing
+            y_position += line_height / 2
+
+        # Set metadata
+        if preserve_metadata:
+            pdf_doc.set_metadata({"title": title, "creator": "lazy-splitter"})
+
+        return pdf_doc
 
     def _create_chapter_epub(
         self,
@@ -274,9 +443,13 @@ class EpubSplitter:
             file=file_stem,
         )
 
-        # Ensure .epub extension
-        if not filename.lower().endswith(".epub"):
-            filename += ".epub"
+        # Ensure correct extension based on output format
+        extension = ".pdf" if self.output_format == "pdf" else ".epub"
+        if not filename.lower().endswith(extension):
+            # Remove any existing extension
+            if filename.lower().endswith(".epub") or filename.lower().endswith(".pdf"):
+                filename = filename[:-5]
+            filename += extension
 
         return self.output_dir / filename
 
