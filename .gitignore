@@ -69,6 +69,10 @@ Thumbs.db
 
 # Project specific
 output/
+examples/*_chapters*/
+examples/epub_test_output/
+examples/epub_chapters_level2/
 *.pdf
 *.epub
+!examples/*.epub
 !tests/fixtures/*.pdf
