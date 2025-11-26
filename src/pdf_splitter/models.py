@@ -1,7 +1,7 @@
 """Models for representing chapters and detection results."""
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
 
 
 @dataclass
@@ -29,7 +29,7 @@ class Chapter:
 class DetectionResult:
     """Container for chapter detection results."""
     
-    chapters: list[Chapter]
+    chapters: List[Chapter]
     strategy_used: str
     total_pages: int
     has_bookmarks: bool

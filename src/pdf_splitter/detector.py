@@ -2,7 +2,7 @@
 
 import re
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Tuple
 import fitz  # PyMuPDF
 
 from pdf_splitter.models import Chapter, DetectionResult
@@ -62,7 +62,7 @@ class ChapterDetector:
         total_pages = len(doc)
         has_bookmarks = len(doc.get_toc()) > 0
         
-        chapters: list[Chapter] = []
+        chapters: List[Chapter] = []
         
         if strategy == "bookmarks" or (strategy == "hybrid" and has_bookmarks):
             chapters = self._detect_from_bookmarks(doc, bookmark_level)
@@ -109,7 +109,7 @@ class ChapterDetector:
         if not toc:
             return []
         
-        chapters: list[Chapter] = []
+        chapters: List[Chapter] = []
         total_pages = len(doc)
         
         # Filter for specified bookmark level
@@ -146,8 +146,8 @@ class ChapterDetector:
         Returns:
             List of detected chapters
         """
-        chapters: list[Chapter] = []
-        potential_chapters: list[tuple[int, str, float]] = []
+        chapters: List[Chapter] = []
+        potential_chapters: List[Tuple[int, str, float]] = []
         
         # Analyze each page for chapter headings
         for page_num in range(len(doc)):

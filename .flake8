@@ -9,7 +9,4 @@ exclude =
     *.egg-info,
     venv,
     env
-ignore = 
-    E203,  # whitespace before ':'
-    E501,  # line too long (handled by black)
-    W503,  # line break before binary operator
+ignore = E203,E501,W503

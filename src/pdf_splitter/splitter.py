@@ -1,6 +1,7 @@
 """PDF splitting functionality."""
 
 from pathlib import Path
+from typing import List
 import fitz  # PyMuPDF
 
 from pdf_splitter.models import Chapter
@@ -27,11 +28,11 @@ class PDFSplitter:
         self.output_dir.mkdir(parents=True, exist_ok=True)
     
     def split(
-        self, 
-        pdf_path: Path, 
-        chapters: list[Chapter],
+        self,
+        pdf_path: Path,
+        chapters: List[Chapter],
         preserve_metadata: bool = True
-    ) -> list[Path]:
+    ) -> List[Path]:
         """
         Split a PDF file into separate files by chapters.
         
@@ -44,7 +45,7 @@ class PDFSplitter:
             List of paths to the created PDF files
         """
         doc = fitz.open(pdf_path)
-        created_files: list[Path] = []
+        created_files: List[Path] = []
         
         # Get original metadata
         metadata = doc.metadata if preserve_metadata else {}
