@@ -100,6 +100,24 @@ This creates:
 
 ## Publishing to PyPI
 
+## Branching and Promotion Flow
+
+The repository uses a staged promotion model:
+
+- `dev`: integration branch for feature and bug-fix PRs
+- `qa`: pre-release validation branch (preview package publishing)
+- `release`: production-ready branch (stable package publishing)
+- `main`: should be kept aligned with `release` and not used for direct feature work
+
+Recommended merge path:
+
+1. `feature/*` -> `dev`
+2. `dev` -> `qa`
+3. `qa` -> `release`
+4. `release` -> `main`
+
+Use branch protection rules on `dev`, `qa`, `release`, and `main` to require PRs and passing CI checks.
+
 ### Test PyPI (recommended first)
 
 1. Create account on [test.pypi.org](https://test.pypi.org)
@@ -135,6 +153,19 @@ make publish
 # Or
 twine upload dist/*
 ```
+
+## Automated Publishing via GitHub Actions
+
+The CI workflow is configured so that:
+
+- PRs and pushes to `main`, `dev`, `qa`, and `release` run tests and lint checks.
+- Pushes to `qa` publish a preview package to TestPyPI using a generated `.dev<run_number>` suffix.
+- Pushes to `release` publish stable packages to PyPI.
+
+Required repository secrets:
+
+- `TEST_PYPI_API_TOKEN` for preview publishing from `qa`
+- `PYPI_API_TOKEN` for stable publishing from `release`
 
 ## Project Structure
 
