@@ -77,3 +77,4 @@ examples/epub_to_pdf_test/
 *.epub
 !examples/*.epub
 !tests/fixtures/*.pdf
+**/*.epub
