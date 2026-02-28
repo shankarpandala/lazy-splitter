@@ -59,9 +59,10 @@ class PDFSplitter:
 
             # Set metadata
             if preserve_metadata:
-                new_doc.set_metadata(metadata)
-                # Add chapter-specific title
-                new_doc.set_metadata({"title": chapter.title})
+                chapter_metadata = dict(metadata)
+                # Add chapter-specific title while preserving existing metadata
+                chapter_metadata["title"] = chapter.title
+                new_doc.set_metadata(chapter_metadata)
 
             # Save the new PDF
             new_doc.save(output_path)
