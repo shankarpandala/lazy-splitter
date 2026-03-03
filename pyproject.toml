@@ -4,19 +4,26 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lazy-splitter"
-version = "0.2.0"
-description = "A collection of intelligent file splitting tools - PDF chapters, videos, audio, and more"
+version = "0.3.0"
+description = "A collection of intelligent file splitting tools - PDF, EPUB, video, audio, documents, images, and more"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
     {name = "Shankar Pandala", email = "shankarpandala@example.com"}
 ]
-keywords = ["pdf", "split", "chapter", "cli", "document", "video", "audio", "lazy", "automation"]
+keywords = [
+    "pdf", "epub", "split", "merge", "convert", "chapter", "cli",
+    "document", "video", "audio", "image", "lazy", "automation",
+    "batch", "ai", "ocr", "tui", "api",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Developers",
     "Topic :: Utilities",
+    "Topic :: Multimedia",
+    "Topic :: Text Processing",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
@@ -24,6 +31,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 dependencies = [
@@ -35,6 +43,91 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Individual feature groups
+video = [
+    "scenedetect>=0.6",
+    "ffmpeg-python>=0.2",
+]
+audio = [
+    "pydub>=0.25",
+    "mutagen>=1.45",
+]
+audio-advanced = [
+    "pydub>=0.25",
+    "mutagen>=1.45",
+    "librosa>=0.10",
+]
+document = [
+    "python-docx>=0.8",
+    "python-pptx>=0.6",
+    "openpyxl>=3.0",
+]
+image = [
+    "Pillow>=9.0",
+]
+image-advanced = [
+    "Pillow>=9.0",
+    "opencv-python>=4.5",
+    "piexif>=1.1",
+    "imagehash>=4.2",
+]
+ocr = [
+    "pytesseract>=0.3",
+    "Pillow>=9.0",
+]
+ocr-advanced = [
+    "easyocr>=1.6",
+    "Pillow>=9.0",
+]
+ai = [
+    "scikit-learn>=1.0",
+    "sentence-transformers>=2.0",
+]
+ai-llm = [
+    "openai>=1.0",
+    "anthropic>=0.20",
+]
+speech = [
+    "openai-whisper>=20230918",
+]
+speech-fast = [
+    "faster-whisper>=0.9",
+]
+web = [
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
+    "python-multipart>=0.0.5",
+]
+tui = [
+    "textual>=0.40",
+]
+cloud-aws = [
+    "boto3>=1.26",
+]
+cloud-gcp = [
+    "google-cloud-storage>=2.0",
+]
+cloud-azure = [
+    "azure-storage-blob>=12.0",
+]
+batch = [
+    "watchdog>=3.0",
+]
+
+# Convenience groups
+cloud = [
+    "boto3>=1.26",
+    "google-cloud-storage>=2.0",
+    "azure-storage-blob>=12.0",
+]
+all = [
+    "lazy-splitter[video,audio,document,image,ocr,ai,web,tui,batch]",
+]
+full = [
+    "lazy-splitter[video,audio-advanced,document,image-advanced,ocr-advanced,ai,ai-llm,speech-fast,web,tui,cloud,batch]",
+]
+
+# Development
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
@@ -44,13 +137,17 @@ dev = [
 ]
 
 [project.scripts]
+# Legacy entry points (preserved for backwards compatibility)
 pdf-splitter = "pdf_splitter.cli:main"
 epub-splitter = "epub_splitter.cli:main"
+# Unified entry point
+lazy-splitter = "lazy_splitter.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/shankarpandala/lazy-splitter"
 Repository = "https://github.com/shankarpandala/lazy-splitter"
 Issues = "https://github.com/shankarpandala/lazy-splitter/issues"
+Documentation = "https://github.com/shankarpandala/lazy-splitter#readme"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -67,4 +164,38 @@ disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = "fitz"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "ebooklib.*",
+    "pydub.*",
+    "mutagen.*",
+    "librosa.*",
+    "scenedetect.*",
+    "PIL.*",
+    "cv2.*",
+    "pytesseract.*",
+    "easyocr.*",
+    "whisper.*",
+    "faster_whisper.*",
+    "sklearn.*",
+    "sentence_transformers.*",
+    "openai.*",
+    "anthropic.*",
+    "fastapi.*",
+    "uvicorn.*",
+    "textual.*",
+    "boto3.*",
+    "botocore.*",
+    "google.*",
+    "azure.*",
+    "watchdog.*",
+    "docx.*",
+    "pptx.*",
+    "openpyxl.*",
+    "piexif.*",
+    "imagehash.*",
+    "markdown.*",
+]
 ignore_missing_imports = true
