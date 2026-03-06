@@ -105,7 +105,7 @@ This creates:
 The repository uses a staged promotion model:
 
 - `dev`: integration branch for feature and bug-fix PRs
-- `qa`: pre-release validation branch (preview package publishing)
+- `qa`: pre-release validation branch (beta package publishing)
 - `release`: production-ready branch (stable package publishing)
 - `main`: should be kept aligned with `release` and not used for direct feature work
 
@@ -117,22 +117,6 @@ Recommended merge path:
 4. `release` -> `main`
 
 Use branch protection rules on `dev`, `qa`, `release`, and `main` to require PRs and passing CI checks.
-
-### Test PyPI (recommended first)
-
-1. Create account on [test.pypi.org](https://test.pypi.org)
-2. Generate API token
-3. Upload:
-
-```bash
-twine upload --repository testpypi dist/*
-```
-
-4. Test installation:
-
-```bash
-pip install --index-url https://test.pypi.org/simple/ pdf-chapter-splitter
-```
 
 ### Production PyPI
 
@@ -159,13 +143,13 @@ twine upload dist/*
 The CI workflow is configured so that:
 
 - PRs and pushes to `main`, `dev`, `qa`, and `release` run tests and lint checks.
-- Pushes to `qa` publish a preview package to TestPyPI using a generated `.dev<run_number>` suffix.
+- Pushes to `dev` publish an alpha package to PyPI using `<base_version>a<run_number>`.
+- Pushes to `qa` publish a beta package to PyPI using `<base_version>b<run_number>`.
 - Pushes to `release` publish stable packages to PyPI.
 
 Required repository secrets:
 
-- `TEST_PYPI_API_TOKEN` for preview publishing from `qa`
-- `PYPI_API_TOKEN` for stable publishing from `release`
+- `PYPI_API_TOKEN` for alpha, beta, and stable publishing
 
 ## Project Structure
 

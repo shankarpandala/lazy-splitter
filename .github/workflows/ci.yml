@@ -68,7 +68,68 @@ jobs:
       - name: Run mypy
         run: mypy src/
 
-  publish-preview:
+  publish-alpha:
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Set alpha version
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+          PRE_TAG: a
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          pyproject = Path('pyproject.toml')
+          content = pyproject.read_text(encoding='utf-8')
+          match = re.search(r'^version\s*=\s*"([^"]+)"', content, flags=re.MULTILINE)
+          if not match:
+              raise SystemExit('Could not find [project].version in pyproject.toml')
+
+          stable_version = match.group(1)
+          base_match = re.match(r'^(\d+\.\d+\.\d+)', stable_version)
+          if not base_match:
+              raise SystemExit(f'Unsupported version format: {stable_version}')
+
+          base_version = base_match.group(1)
+          prerelease_version = f"{base_version}{os.environ['PRE_TAG']}{os.environ['RUN_NUMBER']}"
+          updated = re.sub(
+              r'^version\s*=\s*"([^"]+)"',
+              f'version = "{prerelease_version}"',
+              content,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          pyproject.write_text(updated, encoding='utf-8')
+          print(f"Prerelease version set to: {prerelease_version}")
+          PY
+
+      - name: Build alpha package
+        run: python -m build
+
+      - name: Publish alpha to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload --skip-existing dist/*
+
+  publish-beta:
     needs: [test, lint]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/qa'
@@ -86,9 +147,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install build twine
 
-      - name: Set preview version
+      - name: Set beta version
         env:
           RUN_NUMBER: ${{ github.run_number }}
+          PRE_TAG: b
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -102,27 +164,31 @@ jobs:
               raise SystemExit('Could not find [project].version in pyproject.toml')
 
           stable_version = match.group(1)
-          run_number = os.environ['RUN_NUMBER']
-          preview_version = f"{stable_version}.dev{run_number}"
+          base_match = re.match(r'^(\d+\.\d+\.\d+)', stable_version)
+          if not base_match:
+              raise SystemExit(f'Unsupported version format: {stable_version}')
+
+          base_version = base_match.group(1)
+          prerelease_version = f"{base_version}{os.environ['PRE_TAG']}{os.environ['RUN_NUMBER']}"
           updated = re.sub(
               r'^version\s*=\s*"([^"]+)"',
-              f'version = "{preview_version}"',
+              f'version = "{prerelease_version}"',
               content,
               count=1,
               flags=re.MULTILINE,
           )
           pyproject.write_text(updated, encoding='utf-8')
-          print(f"Preview version set to: {preview_version}")
+          print(f"Prerelease version set to: {prerelease_version}")
           PY
 
-      - name: Build preview package
+      - name: Build beta package
         run: python -m build
 
-      - name: Publish preview to TestPyPI
+      - name: Publish beta to PyPI
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
-        run: twine upload --repository-url https://test.pypi.org/legacy/ --skip-existing dist/*
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload --skip-existing dist/*
 
   publish-release:
     needs: [test, lint]
