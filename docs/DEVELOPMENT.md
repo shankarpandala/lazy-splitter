@@ -143,9 +143,10 @@ twine upload dist/*
 The CI workflow is configured so that:
 
 - PRs and pushes to `main`, `dev`, `qa`, and `release` run tests and lint checks.
-- Pushes to `dev` publish an alpha package to PyPI using `<base_version>a<run_number>`.
-- Pushes to `qa` publish a beta package to PyPI using `<base_version>b<run_number>`.
-- Pushes to `release` publish stable packages to PyPI.
+- Pushes to `dev` publish an alpha package to PyPI using `<next_patch>a<run_number>`.
+- Pushes to `qa` publish a beta package to PyPI using `<next_patch>b<run_number>`.
+- Pushes to `release` publish a stable package to PyPI using `<next_patch>`.
+- `next_patch` is computed automatically from the latest stable version on PyPI (with fallback to `pyproject.toml` if lookup fails).
 
 Required repository secrets:
 
@@ -194,10 +195,9 @@ pdf-chapter-splitter/
 
 ### Update version
 
-1. Update version in `src/pdf_splitter/__init__.py`
-2. Update version in `pyproject.toml`
-3. Update `CHANGELOG.md`
-4. Commit and tag: `git tag v0.X.Y`
+For branch-driven CI/CD publishing (`dev`, `qa`, `release`), versioning is automatic.
+
+Manual version updates are only needed for exceptional cases (for example, forcing a major/minor reset).
 
 ## Troubleshooting
 

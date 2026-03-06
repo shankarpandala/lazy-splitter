@@ -93,22 +93,49 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import json
           import os
           import re
+          from urllib.request import urlopen
 
           pyproject = Path('pyproject.toml')
           content = pyproject.read_text(encoding='utf-8')
-          match = re.search(r'^version\s*=\s*"([^"]+)"', content, flags=re.MULTILINE)
-          if not match:
+          version_match = re.search(r'^version\s*=\s*"([^"]+)"', content, flags=re.MULTILINE)
+          if not version_match:
               raise SystemExit('Could not find [project].version in pyproject.toml')
+          name_match = re.search(r'^name\s*=\s*"([^"]+)"', content, flags=re.MULTILINE)
+          if not name_match:
+              raise SystemExit('Could not find [project].name in pyproject.toml')
 
-          stable_version = match.group(1)
-          base_match = re.match(r'^(\d+\.\d+\.\d+)', stable_version)
-          if not base_match:
-              raise SystemExit(f'Unsupported version format: {stable_version}')
+          current_version = version_match.group(1)
+          current_base_match = re.match(r'^(\d+)\.(\d+)\.(\d+)', current_version)
+          if not current_base_match:
+              raise SystemExit(f'Unsupported version format: {current_version}')
+          current_base = tuple(int(part) for part in current_base_match.groups())
+          package_name = name_match.group(1)
 
-          base_version = base_match.group(1)
-          prerelease_version = f"{base_version}{os.environ['PRE_TAG']}{os.environ['RUN_NUMBER']}"
+          def parse_version_tuple(version: str) -> tuple[int, int, int]:
+              major, minor, patch = version.split('.')
+              return int(major), int(minor), int(patch)
+
+          next_base = current_base
+          try:
+              with urlopen(f'https://pypi.org/pypi/{package_name}/json', timeout=15) as response:
+                  data = json.load(response)
+              stable_versions = [
+                  version for version in data.get('releases', {})
+                  if re.fullmatch(r'\d+\.\d+\.\d+', version)
+              ]
+              if stable_versions:
+                  latest_stable = max(stable_versions, key=parse_version_tuple)
+                  latest_tuple = parse_version_tuple(latest_stable)
+                  pypi_next = (latest_tuple[0], latest_tuple[1], latest_tuple[2] + 1)
+                  next_base = max(current_base, pypi_next)
+          except Exception as exc:
+              print(f'Could not resolve latest stable from PyPI ({exc}); using pyproject base.')
+
+          next_base_version = '.'.join(str(part) for part in next_base)
+          prerelease_version = f"{next_base_version}{os.environ['PRE_TAG']}{os.environ['RUN_NUMBER']}"
           updated = re.sub(
               r'^version\s*=\s*"([^"]+)"',
               f'version = "{prerelease_version}"',
@@ -117,7 +144,7 @@ jobs:
               flags=re.MULTILINE,
           )
           pyproject.write_text(updated, encoding='utf-8')
-          print(f"Prerelease version set to: {prerelease_version}")
+          print(f'Prerelease version set to: {prerelease_version}')
           PY
 
       - name: Build alpha package
@@ -154,22 +181,49 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import json
           import os
           import re
+          from urllib.request import urlopen
 
           pyproject = Path('pyproject.toml')
           content = pyproject.read_text(encoding='utf-8')
-          match = re.search(r'^version\s*=\s*"([^"]+)"', content, flags=re.MULTILINE)
-          if not match:
+          version_match = re.search(r'^version\s*=\s*"([^"]+)"', content, flags=re.MULTILINE)
+          if not version_match:
               raise SystemExit('Could not find [project].version in pyproject.toml')
+          name_match = re.search(r'^name\s*=\s*"([^"]+)"', content, flags=re.MULTILINE)
+          if not name_match:
+              raise SystemExit('Could not find [project].name in pyproject.toml')
 
-          stable_version = match.group(1)
-          base_match = re.match(r'^(\d+\.\d+\.\d+)', stable_version)
-          if not base_match:
-              raise SystemExit(f'Unsupported version format: {stable_version}')
+          current_version = version_match.group(1)
+          current_base_match = re.match(r'^(\d+)\.(\d+)\.(\d+)', current_version)
+          if not current_base_match:
+              raise SystemExit(f'Unsupported version format: {current_version}')
+          current_base = tuple(int(part) for part in current_base_match.groups())
+          package_name = name_match.group(1)
 
-          base_version = base_match.group(1)
-          prerelease_version = f"{base_version}{os.environ['PRE_TAG']}{os.environ['RUN_NUMBER']}"
+          def parse_version_tuple(version: str) -> tuple[int, int, int]:
+              major, minor, patch = version.split('.')
+              return int(major), int(minor), int(patch)
+
+          next_base = current_base
+          try:
+              with urlopen(f'https://pypi.org/pypi/{package_name}/json', timeout=15) as response:
+                  data = json.load(response)
+              stable_versions = [
+                  version for version in data.get('releases', {})
+                  if re.fullmatch(r'\d+\.\d+\.\d+', version)
+              ]
+              if stable_versions:
+                  latest_stable = max(stable_versions, key=parse_version_tuple)
+                  latest_tuple = parse_version_tuple(latest_stable)
+                  pypi_next = (latest_tuple[0], latest_tuple[1], latest_tuple[2] + 1)
+                  next_base = max(current_base, pypi_next)
+          except Exception as exc:
+              print(f'Could not resolve latest stable from PyPI ({exc}); using pyproject base.')
+
+          next_base_version = '.'.join(str(part) for part in next_base)
+          prerelease_version = f"{next_base_version}{os.environ['PRE_TAG']}{os.environ['RUN_NUMBER']}"
           updated = re.sub(
               r'^version\s*=\s*"([^"]+)"',
               f'version = "{prerelease_version}"',
@@ -178,7 +232,7 @@ jobs:
               flags=re.MULTILINE,
           )
           pyproject.write_text(updated, encoding='utf-8')
-          print(f"Prerelease version set to: {prerelease_version}")
+          print(f'Prerelease version set to: {prerelease_version}')
           PY
 
       - name: Build beta package
@@ -207,6 +261,62 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install build twine
+
+      - name: Set stable release version
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import re
+          from urllib.request import urlopen
+
+          pyproject = Path('pyproject.toml')
+          content = pyproject.read_text(encoding='utf-8')
+          version_match = re.search(r'^version\s*=\s*"([^"]+)"', content, flags=re.MULTILINE)
+          if not version_match:
+              raise SystemExit('Could not find [project].version in pyproject.toml')
+          name_match = re.search(r'^name\s*=\s*"([^"]+)"', content, flags=re.MULTILINE)
+          if not name_match:
+              raise SystemExit('Could not find [project].name in pyproject.toml')
+
+          current_version = version_match.group(1)
+          current_base_match = re.match(r'^(\d+)\.(\d+)\.(\d+)', current_version)
+          if not current_base_match:
+              raise SystemExit(f'Unsupported version format: {current_version}')
+          current_base = tuple(int(part) for part in current_base_match.groups())
+          package_name = name_match.group(1)
+
+          def parse_version_tuple(version: str) -> tuple[int, int, int]:
+              major, minor, patch = version.split('.')
+              return int(major), int(minor), int(patch)
+
+          next_base = current_base
+          try:
+              with urlopen(f'https://pypi.org/pypi/{package_name}/json', timeout=15) as response:
+                  data = json.load(response)
+              stable_versions = [
+                  version for version in data.get('releases', {})
+                  if re.fullmatch(r'\d+\.\d+\.\d+', version)
+              ]
+              if stable_versions:
+                  latest_stable = max(stable_versions, key=parse_version_tuple)
+                  latest_tuple = parse_version_tuple(latest_stable)
+                  pypi_next = (latest_tuple[0], latest_tuple[1], latest_tuple[2] + 1)
+                  next_base = max(current_base, pypi_next)
+          except Exception as exc:
+              print(f'Could not resolve latest stable from PyPI ({exc}); using pyproject base.')
+
+          stable_version = '.'.join(str(part) for part in next_base)
+          updated = re.sub(
+              r'^version\s*=\s*"([^"]+)"',
+              f'version = "{stable_version}"',
+              content,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          pyproject.write_text(updated, encoding='utf-8')
+          print(f'Stable version set to: {stable_version}')
+          PY
 
       - name: Build package
         run: python -m build
