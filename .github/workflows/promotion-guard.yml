@@ -1,0 +1,43 @@
+name: Promotion Guard
+
+on:
+  pull_request:
+    branches: [qa, release, main]
+
+permissions:
+  contents: read
+
+jobs:
+  enforce-flow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate promotion source branch
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base="${{ github.base_ref }}"
+          head="${{ github.head_ref }}"
+
+          case "$base" in
+            qa)
+              expected="dev"
+              ;;
+            release)
+              expected="qa"
+              ;;
+            main)
+              expected="release"
+              ;;
+            *)
+              echo "No promotion rule for base branch '$base'."
+              exit 0
+              ;;
+          esac
+
+          if [[ "$head" != "$expected" ]]; then
+            echo "::error title=Invalid promotion source::PRs into '$base' must come from '$expected', got '$head'."
+            exit 1
+          fi
+
+          echo "Promotion path valid: $head -> $base"
