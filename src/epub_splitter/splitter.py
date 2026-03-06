@@ -9,7 +9,6 @@ import fitz  # PyMuPDF
 
 from epub_splitter.models import EpubChapter
 
-
 OutputFormat = Literal["epub", "pdf"]
 
 

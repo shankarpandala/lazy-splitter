@@ -12,7 +12,6 @@ from epub_splitter.detector import EpubChapterDetector
 from epub_splitter.splitter import EpubSplitter
 from epub_splitter import __version__
 
-
 console = Console()
 
 

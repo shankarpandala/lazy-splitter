@@ -12,7 +12,6 @@ from pdf_splitter.detector import ChapterDetector
 from pdf_splitter.splitter import PDFSplitter
 from pdf_splitter import __version__
 
-
 console = Console()
 
 

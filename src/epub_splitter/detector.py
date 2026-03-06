@@ -8,7 +8,6 @@ from ebooklib import epub  # type: ignore
 
 from epub_splitter.models import EpubChapter, EpubDetectionResult
 
-
 DetectionStrategy = Literal["native", "structural", "manifest", "hybrid"]
 SensitivityLevel = Literal["low", "medium", "high"]
 
